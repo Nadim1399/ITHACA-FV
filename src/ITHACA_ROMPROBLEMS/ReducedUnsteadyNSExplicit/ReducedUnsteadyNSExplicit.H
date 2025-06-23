@@ -54,7 +54,7 @@ SourceFiles
 
 /// Class where it is implemented a reduced problem for the <b> unsteady Navier-stokes </b> problem.
 /** This class must be used together with the steadyNS class */
-class ReducedUnsteadyNSExplicit: public reducedUnsteadyNS, SteadyNSTurb
+class ReducedUnsteadyNSExplicit: public reducedUnsteadyNS, public SteadyNSTurb
 {
     private:
 

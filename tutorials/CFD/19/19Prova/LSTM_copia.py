@@ -6,6 +6,10 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from tensorflow.keras.constraints import NonNeg
+from tensorflow.keras.losses import Huber
+from tensorflow.keras import regularizers
+import joblib
 import os
 
 
@@ -34,39 +38,12 @@ u_coeffs_1800 = coeffs_u[:, :1800]
 p_coeffs_1800 = coeffs_p[:, :1800]
 nut_coeffs_1800 = coeffs_nut[:, :1800]
 
-# first_eigen_u = eigen_u[:1800]
-# first_eigen_p = eigen_p[:1800]
-# first_eigen_nut = eigen_nut[:1800]
-
-# train_coeff_u = u_coeffs_1800 * first_eigen_u
-# train_coeff_p = p_coeffs_1800 * first_eigen_p
-# train_coeff_nut = nut_coeffs_1800 * first_eigen_nut
-
-# print("train_coeff_u shape", train_coeff_u.shape)
-# print("train_coeff_p shape", train_coeff_p.shape)
-# print("train_coeff_nut shape", train_coeff_nut.shape)
-
 # ==== CONSIDERARE LE ULTIME 201 COLONNE (SNAPSHOTS) PER LA VALIDATION ====
 u_coeffs_last201 = coeffs_u[:, -201:]
 p_coeffs_last201 = coeffs_p[:, -201:]
 nut_coeffs_last201 = coeffs_nut[:, -201:]
 
-# final_eigen_u = eigen_u[-201:]
-# final_eigen_p = eigen_p[-201:]
-# final_eigen_nut = eigen_nut[-201:]
-
-# val_coeff_u = u_coeffs_last201 * final_eigen_u
-# val_coeff_p = p_coeffs_last201 * final_eigen_p
-# val_coeff_nut = nut_coeffs_last201 * final_eigen_nut
-
-# print("val_coeff_u shape", val_coeff_u.shape)
-# print("val_coeff_p shape", val_coeff_p.shape)
-# print("val_coeff_nut shape", val_coeff_nut.shape)
-
 # ==== CONCATENAZIONE INPUT ====
-# X_all = np.hstack([train_coeff_u.T, train_coeff_p.T])  
-# Y_all = train_coeff_nut.T  
-
 X_all = np.hstack([u_coeffs_1800.T, p_coeffs_1800.T])  
 Y_all = nut_coeffs_1800.T  
 
@@ -77,14 +54,14 @@ y_scaler = StandardScaler()
 X_all = x_scaler.fit_transform(X_all)                         # Training
 Y_all = y_scaler.fit_transform(Y_all)                         # Training
 
-# X_val_raw = np.hstack([val_coeff_u.T, val_coeff_p.T])   # Validazione
-# Y_val_raw = val_coeff_nut.T                                # Validazione
-
 X_val_raw = np.hstack([u_coeffs_last201.T, p_coeffs_last201.T])   # Validazione
 Y_val_raw = nut_coeffs_last201.T                                # Validazione
 
 X_val = x_scaler.transform(X_val_raw)                         # Validazione
 Y_val = y_scaler.transform(Y_val_raw)                         # Validazione
+
+joblib.dump(x_scaler, "./Copia/x_scaler.pkl")
+joblib.dump(y_scaler, "./Copia/y_scaler.pkl")
 
 # ==== CREAZIONE SEQUENZE PER LSTM ====
 def create_sequences(X, Y, lookback, step=1):
@@ -95,11 +72,15 @@ def create_sequences(X, Y, lookback, step=1):
     return np.array(X_seq), np.array(Y_seq)
 
 X_train_seq, Y_train_seq = create_sequences(X_all, Y_all, lookback, step=1)
+# X_train_seq = np.clip(X_train_seq, -1e3, 1e3)
+# Y_train_seq = np.clip(Y_train_seq, -1e3, 1e3)
 
 X_val_seq, Y_val_seq = create_sequences(X_val, Y_val, lookback=lookback, step=1)
 
 print("X_seq shape:", X_train_seq.shape)
 print("Y_seq shape:", Y_train_seq.shape)
+print("X_train_seq min/max:", np.min(X_train_seq), np.max(X_train_seq))
+print("Y_train_seq min/max:", np.min(Y_train_seq), np.max(Y_train_seq))
 
 # ==== DEFINIZIONE MODELLO LSTM ====
 # model = Sequential()
@@ -113,16 +94,26 @@ model.add(LSTM(32, return_sequences=False))                                     
 model.add(Dense(32, activation='relu'))                                                   # 3° Dense
 model.add(Dense(Y_train_seq.shape[1]))                                                    # Output layer
 
-opt = Adam(learning_rate=1.5e-5)
+opt = Adam(learning_rate=2e-5)
 
 model.compile(optimizer=opt, loss='mse')
 model.summary()
 
-early_stop = EarlyStopping(
-    monitor='val_loss',        # monitora la loss di validazione
-    patience=5,                # numero di epoche senza miglioramento prima di fermare
-    restore_best_weights=True # ripristina i pesi migliori al termine
-)
+# model = Sequential()
+# model.add(LSTM(
+#     units=48, 
+#     return_sequences=False, 
+#     input_shape=(lookback, X_train_seq.shape[2]),
+#     dropout=0.4, recurrent_dropout=0.4 
+# ))
+# model.add(Dense(32, activation='tanh', kernel_regularizer=regularizers.l2(1e-4)))
+# model.add(Dense(16, activation='tanh', kernel_regularizer=regularizers.l2(1e-4)))
+# model.add(Dense(Y_train_seq.shape[1], activation='softplus'))
+
+# opt = Adam(learning_rate=1e-5)
+
+# model.compile(optimizer=opt, loss=Huber(delta=1.0))
+# model.summary()
 
 
 ###################    TRAINING     ###################
@@ -133,6 +124,7 @@ history = model.fit(X_train_seq, Y_train_seq, epochs=epochs, batch_size=batch_si
 # ==== PREDIZIONE DOPO IL TRAINING ====
 Y_pred = model.predict(X_train_seq)
 Y_pred_original = y_scaler.inverse_transform(Y_pred)
+# Y_pred_original = np.clip(Y_pred_original, 0, np.percentile(Y_pred_original, 99))
 Y_true_original = y_scaler.inverse_transform(Y_train_seq)
 
 # ==== SALVATAGGIO MODELLO ====
@@ -140,7 +132,10 @@ model.save("./Copia/trained_model.keras")
 
 # ==== PLOT ERRORE Relativo TRA VALORE PREDETTO E QUELLO ORIGINALE DOPO IL TRAINING ====
 for i in range(Y_true_original.shape[1]): 
-    rel_error_train = np.abs(Y_true_original[:, i] - Y_pred_original[:, i])/np.abs(Y_pred_original[:, i])
+    epsilon = 1e-8
+    rel_error_train = np.abs(Y_true_original[:, i] - Y_pred_original[:, i]) / (np.abs(Y_pred_original[:, i]) + epsilon)
+
+    # rel_error_train = np.abs(Y_true_original[:, i] - Y_pred_original[:, i])/np.abs(Y_pred_original[:, i])
 
     plt.figure(figsize=(10, 4))
     plt.plot(rel_error_train, label=f'|Errore training|')
@@ -179,6 +174,7 @@ for i in range(min(3, Y_true_original.shape[1])):
 
 Y_val_pred = model.predict(X_val_seq)
 Y_val_pred_orig = y_scaler.inverse_transform(Y_val_pred)
+# Y_val_pred_orig = np.clip(Y_val_pred_orig, 0, np.percentile(Y_val_pred_orig, 99))
 Y_val_true_orig = y_scaler.inverse_transform(Y_val_seq)
 
 # === SALVA PREDICTION E VERITÀ ===

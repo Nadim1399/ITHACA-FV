@@ -2,6 +2,8 @@ import numpy as np
 from scipy.linalg import solve
 import sys
 import tensorflow as tf
+import joblib
+from sklearn.preprocessing import StandardScaler
 
 
 class ReducedUnsteadyNSExplicit:
@@ -213,7 +215,9 @@ class ReducedUnsteadyNSExplicit:
 
         counter = 0
         time = self.tstart
-        
+
+        nut_coeffs = np.zeros(10)
+
         # Number of steps
         while time < self.finalTime - 0.5 * dt:
             time += dt
@@ -230,21 +234,35 @@ class ReducedUnsteadyNSExplicit:
         a_o = a_o.flatten()
         b = b.flatten()
         c_o = c_o.flatten()
-
-        tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
+        
+        nut_dim = len(nut_coeffs)
+        tmp_sol = np.zeros((1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + nut_dim))
         tmp_sol[0] = time
-        tmp_sol[1:int(self.Nphi_u)+1] = a_o                                                
-        tmp_sol[int(self.Nphi_u)+1:int(self.Nphi_u)+1+int(self.Nphi_p)] = b                
-        tmp_sol[-int(self.Nphi_u):] = c_o                                               
-        self.online_solution[0] = tmp_sol 
+        tmp_sol[1 : 1 + int(self.Nphi_u)] = a_o
+        tmp_sol[1 + int(self.Nphi_u) : 1 + int(self.Nphi_u) + int(self.Nphi_p)] = b
+        tmp_sol[1 + int(self.Nphi_u) + int(self.Nphi_p) : 1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u)] = c_o
+        tmp_sol[-nut_dim:] = np.zeros(nut_dim)  
+        self.online_solution[0] = tmp_sol
+
+        # nut_dim = len(nut_coeffs)
+        # tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
+        # tmp_sol[0] = time
+        # tmp_sol[1:int(self.Nphi_u)+1] = a_o                                                
+        # tmp_sol[int(self.Nphi_u)+1:int(self.Nphi_u)+1+int(self.Nphi_p)] = b                
+        # tmp_sol[-int(self.Nphi_u):] = c_o                                               
+        # self.online_solution[0] = tmp_sol 
 
         # Modello LSTM
-        lstm_model = tf.keras.models.load_model('./trained_model.keras')
+        lstm_model = tf.keras.models.load_model('./Copia/trained_model.keras')
+
+        x_scaler = joblib.load("./Copia/x_scaler.pkl")
+        y_scaler = joblib.load("./Copia/y_scaler.pkl")
+        
 
         for out_iterator in range(1, len(self.online_solution)):
             time += dt
             print(f"################## time = {time} ##################")
-            
+
             # Pressure Poisson Equation
 
             # Diffusion term 
@@ -299,7 +317,8 @@ class ReducedUnsteadyNSExplicit:
                 boundaryTerm[:, l] = vel * (RD_matrix[:, l] * nu + vel * RC_matrix[:, l])
             
             for k in range(int(self.Nphi_u)):
-                cc = c_o.T @ C_tensor[k, :, :] @ a_o - nut_coeffs[:, i].T @ cTotalTensor[k, :, :] @ a_o
+
+                cc = c_o.T @ C_tensor[k, :, :] @ a_o - nut_coeffs.T @ cTotalTensor[k, :, :] @ a_o
                 a_n[k] = a_o[k] + (M5[k] - cc - M3[k]) * dt
 
                 for l in range(int(self.N_BC)):
@@ -327,24 +346,37 @@ class ReducedUnsteadyNSExplicit:
             c_n = np.linalg.solve(W_matrix, M6 - M9 + dt * (-M8 + 
                   M7 + boundaryTermFlux))
 
-            tmp_sol[0] = time 
+
+            nut_dim = len(nut_coeffs)
+            tmp_sol = np.zeros((1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + nut_dim))
+            tmp_sol[0] = time
             tmp_sol[1 : 1 + int(self.Nphi_u)] = a_n.flatten()
-            tmp_sol[1 + int(self.Nphi_u):1 + int(self.Nphi_u) + int(self.Nphi_p)] = b.flatten()
-            tmp_sol[-int(self.Nphi_u):] = c_n.flatten()
+            tmp_sol[1 + int(self.Nphi_u) : 1 + int(self.Nphi_u) + int(self.Nphi_p)] = b.flatten()
+            tmp_sol[1 + int(self.Nphi_u) + int(self.Nphi_p) : 1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u)] = c_n.flatten()
+            tmp_sol[-nut_dim:] = nut_coeffs.flatten()
             self.online_solution[out_iterator] = tmp_sol
+
+
+            # tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
+            # tmp_sol[0] = time 
+            # tmp_sol[1 : 1 + int(self.Nphi_u)] = a_n.flatten()
+            # tmp_sol[1 + int(self.Nphi_u):1 + int(self.Nphi_u) + int(self.Nphi_p)] = b.flatten()
+            # tmp_sol[-int(self.Nphi_u):] = c_n.flatten()
+            # self.online_solution[out_iterator] = tmp_sol
 
             a_o = a_n.copy()
             c_o = c_n
-           
+            
             # === Calcolo nut con modello LSTM ===
-            lstm_input = np.concatenate((a_n.flatten(), b.flatten()), axis=0)[np.newaxis, np.newaxis, :] 
-            nut_coeffs = lstm_model.predict(lstm_input, verbose=0)[0]  
+            input_concat = np.concatenate((a_n.flatten(), b.flatten()), axis=0).reshape(1, -1)  
+            input_scaled = x_scaler.transform(input_concat)  
+            lstm_input = input_scaled[np.newaxis, :, :] 
+            nut_coeffs = lstm_model.predict(lstm_input, verbose=0)[0]
+            nut_coeffs = y_scaler.inverse_transform(nut_coeffs.reshape(1, -1))[0]  
             if not hasattr(self, "nut_coeffs_history"):
                  self.nut_coeffs_history = []
             self.nut_coeffs_history.append(nut_coeffs)
 
-            # Ricostruzione campo viscosità turbolenta
-            # nut_field = np.tensordot(nut_modes, nut_coeffs, axes=(2, 0))
 
 # def reconstruct(self, export_fields, folder):
 #     if export_fields:

@@ -47,6 +47,7 @@ SourceFiles
 #include "unsteadyNS.H"
 #include "UnsteadyNSExplicit.H"
 #include <iostream>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -81,6 +82,14 @@ class UnsteadyNSExplicitTurb: public UnsteadyNSExplicit
         /// Eddy viscosity field
         autoPtr<volScalarField> _nut;
 
+        /// Tensor for turbulence 
+        Eigen::Tensor<double, 3> cTotalTensor_;
+
+        Eigen::Tensor<double, 3> computeAndStoreTurb1(Foam::label NUmodes, 
+                                 Foam::label NSUPmodes, Foam::label nNutModes);
+        Eigen::Tensor<double, 3> computeAndStoreTurb2(Foam::label NUmodes, 
+                                 Foam::label NSUPmodes, Foam::label nNutModes);
+
         // Functions
 
         //--------------------------------------------------------------------------
@@ -91,6 +100,8 @@ class UnsteadyNSExplicitTurb: public UnsteadyNSExplicit
         ///
         void truthSolve(List<scalar> mu_now,
                         fileName folder = "./ITHACAoutput/Offline/");
+
+        void computeAndStoreTurb(fileName folder, label NU, label NSUP, label Nnut);
 
         // Eigen::Tensor<double, 3> diffusive_term_consistent_turb(label NUmodes,
         //                     label NPmodes,

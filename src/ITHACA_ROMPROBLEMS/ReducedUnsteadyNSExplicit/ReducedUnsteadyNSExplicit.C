@@ -45,6 +45,7 @@ ReducedUnsteadyNSExplicit::ReducedUnsteadyNSExplicit()
 ReducedUnsteadyNSExplicit::ReducedUnsteadyNSExplicit(UnsteadyNSExplicit&
         FOMproblem)
     :
+    reducedUnsteadyNS(FOMproblem),
     problem(& FOMproblem)
 {
     N_BC = problem->inletIndex.rows();
@@ -52,17 +53,17 @@ ReducedUnsteadyNSExplicit::ReducedUnsteadyNSExplicit(UnsteadyNSExplicit&
     Nphi_p = problem->K_matrix.cols();
     
     std::vector<int> N_BC_vec = {N_BC};
-    cnpy::npy_save("/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/N_BC.npy", 
+    cnpy::npy_save("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/N_BC.npy", 
                    N_BC_vec.data(), 
                    {1}, "w");
 
     std::vector<int> Nphi_p_vec = {Nphi_p};
-    cnpy::npy_save("/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/Nphi_p.npy", 
+    cnpy::npy_save("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/Nphi_p.npy", 
                    Nphi_p_vec.data(), 
                    {1}, "w");
 
     std::vector<int> Nphi_u_vec = {Nphi_u};
-    cnpy::npy_save("/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/Nphi_u.npy", 
+    cnpy::npy_save("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/Nphi_u.npy", 
                    Nphi_u_vec.data(), 
                    {1}, "w");
 
@@ -213,9 +214,9 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
         Eigen::VectorXd presidual = Eigen::VectorXd::Zero(Nphi_p);
         Eigen::VectorXd RHS  = Eigen::VectorXd::Zero(Nphi_p);
 
-        cnpy::save(x, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/x_con.npy");
-        cnpy::save(presidual, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/presidual_con.npy");
-        cnpy::save(RHS, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/RHS_con.npy");
+        cnpy::save(x, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/x_con.npy");
+        cnpy::save(presidual, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/presidual_con.npy");
+        cnpy::save(RHS, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/RHS_con.npy");
 
         // Counting variable
         int counter = 0;
@@ -240,9 +241,9 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
         c_o = ITHACAutilities::getCoeffs(problem->Phifield[0],
                                          problem->Phimodes, 0, false);
 
-        cnpy::save(a_o, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/a_o_con.npy");;    
-        cnpy::save(b, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/b_con.npy");    
-        cnpy::save(c_o, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/c_o_con.npy");
+        cnpy::save(a_o, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/a_o_con.npy");;    
+        cnpy::save(b, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/b_con.npy");    
+        cnpy::save(c_o, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/c_o_con.npy");
 
         // Set size of online solution
         online_solution.resize(counter + 1);
@@ -369,30 +370,8 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
             tmp_sol.col(0).tail(Nphi_u) = c_n;
             online_solution[i] = tmp_sol;
 
-            // std::cout << "########## SETTIMO SAVE, RIGA 234 ##########" << std::endl;
-            // std::cout << "a_o_con_C" << a_o << std::endl;
-            // std::cout << "b_con_C" << b << std::endl;
-            // std::cout << "x_con_C" << x << std::endl;
-            // std::cout << "presidual_con_C" << presidual << std::endl;
-            // std::cout << "RHS_con_C" << RHS << std::endl;
-            // std::cout << "cc_con_C" << cc << std::endl;
-            // std::cout << "c_n_con_C" << c_n << std::endl;
-
             a_o = a_n;
             c_o = c_n;
-
-            // int rows = online_solution[0].rows();
-            // int cols = online_solution.size();
-
-            // Eigen::MatrixXd full_solution(rows, cols);
-
-            // for (int i = 0; i < cols; ++i) 
-            // {
-            //     full_solution.col(i) = online_solution[i];
-            // }
-
-            // // Salva in formato .npy compatibile con Python
-            // cnpy::save("/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/online_solution_consistent_C.npy", full_solution);
 
         }
     }

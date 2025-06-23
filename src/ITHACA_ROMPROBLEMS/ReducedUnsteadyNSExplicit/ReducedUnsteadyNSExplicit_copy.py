@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import solve
 import sys
+import tensorflow as tf
 
 
 class ReducedUnsteadyNSExplicit:
@@ -151,18 +152,7 @@ class ReducedUnsteadyNSExplicit:
                  a_n.flatten(),          
                  b.flatten()             
             ))
-
-            # print("########## SESTO SAVE, RIGA 207 ##########")
-            # print("a_o_in_C", a_o)
-            # print("b_in_C", b)
-            # print("x_in_C", x)
-            # print("presidual_in_C", presidual)
-            # print("RHS_in_C", RHS)
-            # print("M1_in_C", M1)
-            # print("M2_in_C", M2)
-            # print("c_in_C", cc)
-            # print("a_n_in_C", a_n)
-
+            
             a_o = a_n.copy()
 
     def _solve_consistent(self, vel):
@@ -245,6 +235,9 @@ class ReducedUnsteadyNSExplicit:
         tmp_sol[int(self.Nphi_u)+1:int(self.Nphi_u)+1+int(self.Nphi_p)] = b                
         tmp_sol[-int(self.Nphi_u):] = c_o                                               
         self.online_solution[0] = tmp_sol 
+
+        # Modello LSTM
+        lstm_model = tf.keras.models.load_model('./trained_model.keras')
 
         for i in range(1, len(self.online_solution)):
             time += dt
@@ -338,28 +331,29 @@ class ReducedUnsteadyNSExplicit:
             tmp_sol[-int(self.Nphi_u):] = c_n.flatten()
             self.online_solution[i] = tmp_sol
 
-            # print("########## SETTIMO SAVE, RIGA 207 ##########")
-            # print("a_o_con_C", a_o)
-            # print("b_con_C", b)
-            # print("x_con_C", x)
-            # print("presidual_con_C", presidual)
-            # print("RHS_con_C", RHS)
-            # print("c_con_C", cc)
-            # print("c_n", c_n)
-
             a_o = a_n.copy()
             c_o = c_n
+
+            # === Calcolo nut con modello LSTM ===
+            lstm_input = np.concatenate((a_n.flatten(), b.flatten()), axis=0)[np.newaxis, :] 
+            nut_coeffs = lstm_model.predict(lstm_input, verbose=0)[0]  
+            if not hasattr(self, "nut_coeffs_history"):
+                 self.nut_coeffs_history = []
+            self.nut_coeffs_history.append(nut_coeffs)
+
+            # Ricostruzione campo viscosità turbolenta
+            nut_field = np.tensordot(nut_modes, nut_coeffs, axes=(2, 0)) 
 
 
 def reconstruct(self, export_fields, folder):
     if export_fields:
         os.makedirs(folder, exist_ok=True)
         ITHACAutilities.createSymLink(folder)
-    print("qui")
     counter = 0
     next_write = 0
     CoeffU = []
     CoeffP = []
+    CoeffNut = []
     tValues = []
     export_every_index = round(self.exportEvery / self.storeEvery)
 
@@ -367,9 +361,11 @@ def reconstruct(self, export_fields, folder):
         if counter == next_write:
             currentUCoeff = self.online_solution[i][1:1 + self.Nphi_u, 0].reshape(-1, 1)
             currentPCoeff = self.online_solution[i][1 + self.Nphi_u:1 + self.Nphi_u + self.Nphi_p, 0].reshape(-1, 1)
-            
+            currentNutCoeff = self.nut_coeffs_history[i].reshape(-1, 1)  
+
             CoeffU.append(currentUCoeff)
             CoeffP.append(currentPCoeff)
+            CoeffNut.append(currentNutCoeff)
             
             next_write += export_every_index
             time_now = self.online_solution[i][0, 0]
@@ -379,10 +375,14 @@ def reconstruct(self, export_fields, folder):
     
     uRec = volVectorField("uRec", self.Umodes[0])
     pRec = volScalarField("pRec", self.Pmodes[0])
+    nutRec = volScalarField("nutRec", self.nut_modes[:, :, 0]) 
+
     
     self.uRecFields = self.Umodes.reconstruct(uRec, CoeffU, "uRec")
     self.pRecFields = self.Pmodes.reconstruct(pRec, CoeffP, "pRec")
-    
+    self.nutRecFields = self.NutModes.reconstruct(nutRec, CoeffNut, "nutRec")
+
     if export_fields:
         ITHACAstream.exportFields(self.uRecFields, folder, "uRec")
         ITHACAstream.exportFields(self.pRecFields, folder, "pRec")
+        ITHACAstream.exportFields(self.nutRecFields, folder, "nutRec")

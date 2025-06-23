@@ -165,6 +165,8 @@ int main(int argc, char* argv[])
     // Galerkin Projection
     example.discretizeThenProject("./Matrices", NmodesUproj, NmodesPproj,
                                   NmodesSUPproj);
+    fileName folder = example._runTime().path();
+    example.computeAndStoreTurb(folder, 10, 0, 10);
     ReducedUnsteadyNSExplicit reduced(example);
     // Set values of the reduced order model
     reduced.nu = 0.01;

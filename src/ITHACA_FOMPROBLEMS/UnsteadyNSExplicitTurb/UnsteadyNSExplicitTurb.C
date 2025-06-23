@@ -166,6 +166,86 @@ void UnsteadyNSExplicitTurb::truthSolve(List<scalar> mu_now, fileName folder)
 
 //////////////   AGGIUNTA DELLA TURBOLENZA (NUT)   //////////////
 
+//Funzione per il tensore cTotalTensor//
+
+Eigen::Tensor<double, 3> UnsteadyNSExplicitTurb::computeAndStoreTurb1(label NUmodes,
+        label NSUPmodes, label nNutModes)
+{
+    label cSize = NUmodes + NSUPmodes + liftfield.size();
+    Eigen::Tensor<double, 3> ct1Tensor;
+    ct1Tensor.resize(cSize, nNutModes, cSize);
+
+    for (label i = 0; i < cSize; i++)
+    {
+        for (label j = 0; j < nNutModes; j++)
+        {
+            for (label k = 0; k < cSize; k++)
+            {
+                ct1Tensor(i, j, k) = fvc::domainIntegrate(L_U_SUPmodes[i] & fvc::laplacian(
+                                         nutModes[j], L_U_SUPmodes[k])).value();
+            }
+        }
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(ct1Tensor, "./ITHACAoutput/Matrices/",
+                                  "ct1_" + name(liftfield.size()) + "_" + name(NUmodes) + "_" + name(
+                                      NSUPmodes) + "_" + name(nNutModes) + "_t");
+    return ct1Tensor;
+}
+
+Eigen::Tensor<double, 3> UnsteadyNSExplicitTurb::computeAndStoreTurb2(label NUmodes,
+        label NSUPmodes, label nNutModes)
+{
+    label cSize = NUmodes + NSUPmodes + liftfield.size();
+    Eigen::Tensor<double, 3> ct2Tensor;
+    ct2Tensor.resize(cSize, nNutModes, cSize);
+
+    for (label i = 0; i < cSize; i++)
+    {
+        for (label j = 0; j < nNutModes; j++)
+        {
+            for (label k = 0; k < cSize; k++)
+            {
+                ct2Tensor(i, j, k) = fvc::domainIntegrate(L_U_SUPmodes[i] & (fvc::div(
+                                         nutModes[j] * dev((fvc::grad(L_U_SUPmodes[k]))().T())))).value();
+            }
+        }
+    }
+
+    // Export the tensor
+    ITHACAstream::SaveDenseTensor(ct2Tensor, "./ITHACAoutput/Matrices/",
+                                  "ct2_" + name(liftfield.size()) + "_" + name(NUmodes) + "_" + name(
+                                      NSUPmodes) + "_" + name(nNutModes) + "_t");
+    return ct2Tensor;
+}
+
+void UnsteadyNSExplicitTurb::computeAndStoreTurb(fileName folder, label NU, label NSUP,
+                              label Nnut)
+{
+    // Calcola i due tensori separati
+    Eigen::Tensor<double, 3> ct1Tensor = computeAndStoreTurb1(NU, NSUP, Nnut);
+    Eigen::Tensor<double, 3> ct2Tensor = computeAndStoreTurb2(NU, NSUP, Nnut);
+
+    // Controlla che abbiano le stesse dimensioni
+    if ((ct1Tensor.dimension(0) != ct2Tensor.dimension(0)) ||
+        (ct1Tensor.dimension(1) != ct2Tensor.dimension(1)) ||
+        (ct1Tensor.dimension(2) != ct2Tensor.dimension(2)))
+    {
+        FatalErrorInFunction
+            << "I tensori ct1 e ct2 hanno dimensioni incompatibili!" << abort(FatalError);
+    }
+
+    // Somma i due tensori
+    Eigen::Tensor<double, 3> cTotalTensor = ct1Tensor + ct2Tensor;
+
+    // Salva il tensore risultante
+    ITHACAstream::SaveDenseTensor(cTotalTensor, folder,
+        "cTotalTensor_" + name(liftfield.size()) + "_" + name(NU) + "_" + name(NSUP) + "_" + name(Nnut) + "_t");
+    
+    cnpy::save(cTotalTensor, "./ITHACAoutput/Matrices/cTotalTensor.npy");
+
+}
 
 // Eigen::Tensor<double, 3> UnsteadyNSExplicitTurb::diffusive_term_consistent_turb(label NUmodes,
 //     label NPmodes,

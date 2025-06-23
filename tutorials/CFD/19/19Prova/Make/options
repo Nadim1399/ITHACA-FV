@@ -24,7 +24,9 @@ EXE_INC = \
     -Wno-comment \
     -w \
     -DOFVER=$${WM_PROJECT_VERSION%.*} \
-    -std=c++14
+    -std=c++14 \
+    -g \
+    -O0
 
 EXE_LIBS = \
     -lturbulenceModels \

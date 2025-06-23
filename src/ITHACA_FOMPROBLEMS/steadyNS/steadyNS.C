@@ -1816,7 +1816,7 @@ List<Eigen::MatrixXd> steadyNS::pressure_gradient_term_linsys_div(label NPmodes)
 
     for (label i = 0; i < LinSysDiv.size(); ++i)
     {
-        std::string filename = "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/LinSysDiv_" + std::to_string(i) + ".npy";
+        std::string filename = "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysDiv_" + std::to_string(i) + ".npy";
         cnpy::save(LinSysDiv[i], filename);
     }
    
@@ -1857,7 +1857,7 @@ List<Eigen::MatrixXd> steadyNS::pressure_gradient_term_linsys_conv(
 
     for (label i = 0; i < LinSysConv.size(); ++i)
     {
-        std::string filename = "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/LinSysConv_" + std::to_string(i) + ".npy";
+        std::string filename = "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysConv_" + std::to_string(i) + ".npy";
         cnpy::save(LinSysConv[i], filename);
     }
 
@@ -1898,7 +1898,7 @@ List<Eigen::MatrixXd> steadyNS::pressure_gradient_term_linsys_diff(
 
     for (label i = 0; i < LinSysDiff.size(); ++i)
     {
-        std::string filename = "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/LinSysDiff_" + std::to_string(i) + ".npy";
+        std::string filename = "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysDiff_" + std::to_string(i) + ".npy";
         cnpy::save(LinSysDiff[i], filename);
     }
 
