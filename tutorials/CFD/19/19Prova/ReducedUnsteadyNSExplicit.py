@@ -1,9 +1,11 @@
 import numpy as np
+import os
 from scipy.linalg import solve
 import sys
 import tensorflow as tf
 import joblib
 from sklearn.preprocessing import StandardScaler
+from smithers.io.openfoam import OpenFoamHandler
 
 
 class ReducedUnsteadyNSExplicit:
@@ -228,7 +230,7 @@ class ReducedUnsteadyNSExplicit:
 
         
         # Set size of online solution 
-        self.online_solution = [None] * (counter + 1)
+        self.online_solution = [None] * (counter)
         
         # Create vector to store temporal solution and save initial condition as first solution
         a_o = a_o.flatten()
@@ -242,7 +244,7 @@ class ReducedUnsteadyNSExplicit:
         tmp_sol[1 + int(self.Nphi_u) : 1 + int(self.Nphi_u) + int(self.Nphi_p)] = b
         tmp_sol[1 + int(self.Nphi_u) + int(self.Nphi_p) : 1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u)] = c_o
         tmp_sol[-nut_dim:] = np.zeros(nut_dim)  
-        self.online_solution[0] = tmp_sol
+        # self.online_solution[0] = tmp_sol
 
         # nut_dim = len(nut_coeffs)
         # tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
@@ -259,7 +261,7 @@ class ReducedUnsteadyNSExplicit:
         y_scaler = joblib.load("./Copia/y_scaler.pkl")
         
 
-        for out_iterator in range(1, len(self.online_solution)):
+        for out_iterator in range(len(self.online_solution)):
             time += dt
             print(f"################## time = {time} ##################")
 
@@ -377,122 +379,160 @@ class ReducedUnsteadyNSExplicit:
                  self.nut_coeffs_history = []
             self.nut_coeffs_history.append(nut_coeffs)
 
+    def reconstruct(self, ROM_LSTM_Rec):
 
-# def reconstruct(self, export_fields, folder):
-#     if export_fields:
-#         os.makedirs(folder, exist_ok=True)
-#         ITHACAutilities.createSymLink(folder)
-    
-#     counter = 0
-#     next_write = 0
+        os.makedirs(ROM_LSTM_Rec, exist_ok=True)
+
+        CoeffU = []
+        CoeffP = []
+        CoeffNut = []
+        tValues = []
+        print("onl", len(self.online_solution))
+        print("onl", len(self.nut_coeffs_history))
+
+        for i in range(len(self.online_solution)):
+            sol = self.online_solution[i]
+            nut = self.nut_coeffs_history[i]
+
+            if sol is None or nut is None:
+                continue
+
+            # Assicurati che Nphi_u e Nphi_p siano int (potrebbero essere list/array)
+            Nphi_u = self.Nphi_u[0] if isinstance(self.Nphi_u, (list, np.ndarray)) else self.Nphi_u
+            Nphi_p = self.Nphi_p[0] if isinstance(self.Nphi_p, (list, np.ndarray)) else self.Nphi_p
+
+            currentUCoeff = sol[1:1 + Nphi_u].reshape(-1, 1)
+            currentPCoeff = sol[1 + Nphi_u:1 + Nphi_u + Nphi_p].reshape(-1, 1)
+            currentNutCoeff = nut.reshape(-1, 1)
+
+            CoeffU.append(currentUCoeff)
+            CoeffP.append(currentPCoeff)
+            CoeffNut.append(currentNutCoeff)
+
+            time_now = sol[0] if sol[0].ndim == 0 else sol[0, 0]
+            tValues.append(time_now)
+
+        ##  LEGGERE I MODI POD  ##
+        base_dir = "ITHACAoutput/POD"
+
+        all_modes = OpenFoamHandler().read(base_dir, time_instants='all_numeric')
+
+        u_modes = []
+        p_modes = []
+        nut_modes = []
+
+        for i in range(1, 11):
+            u_modes.append(all_modes[str(i)]["fields"]["U"][1])
+            p_modes.append(all_modes[str(i)]["fields"]["p"][1])
+            nut_modes.append(all_modes[str(i)]["fields"]["nut"][1])
+
+        # Costruzione delle matrici finali (ogni colonna è un modo POD)
+        u_POD_matrix = np.stack(u_modes, axis=2)
+        p_POD_matrix = np.column_stack(p_modes)
+        nut_POD_matrix = np.column_stack(nut_modes)
+
+        # Output delle dimensioni per verifica
+        print("Matrice U (velocità):", u_POD_matrix.shape)
+        print("Matrice P (pressione):", p_POD_matrix.shape)
+        print("Matrice NUT (viscosità):", nut_POD_matrix.shape)
+
+        CoeffU_mat = np.hstack(CoeffU)
+        CoeffP_mat = np.hstack(CoeffP)
+        CoeffNut_mat = np.hstack(CoeffNut)
+
+        print("CoeffU:", CoeffU_mat.shape)
+        print("Coeffp:", CoeffP_mat.shape)
+        print("CoeffNut:", CoeffNut_mat.shape)
+
+        print("u_POD_matrix", u_POD_matrix.shape)
+        print("p_POD_matrix", p_POD_matrix.shape)
+        print("nut_POD_matrix", nut_POD_matrix.shape)
+
+        u_field_LSTM = u_POD_matrix @ CoeffU_mat
+        p_field_LSTM = p_POD_matrix @ CoeffP_mat
+        nut_field_LSTM = nut_POD_matrix @ CoeffNut_mat
+
+        np.save(os.path.join(ROM_LSTM_Rec, "u_field_LSTM.npy"), u_field_LSTM)
+        np.save(os.path.join(ROM_LSTM_Rec, "p_field_LSTM.npy"), p_field_LSTM)
+        np.save(os.path.join(ROM_LSTM_Rec, "nut_field_LSTM.npy"), nut_field_LSTM)
+
+
+# def reconstruct(self,  folder):
+
+#     os.makedirs(folder, exist_ok=True)
+
 #     CoeffU = []
 #     CoeffP = []
 #     CoeffNut = []
 #     tValues = []
-#     export_every_index = round(self.exportEvery / self.storeEvery)
-#     next_export = 0
 
 #     for i in range(len(self.online_solution)):
-#         if counter == next_write:
-#             currentUCoeff = self.online_solution[i][1:1 + self.Nphi_u, 0].reshape(-1, 1)
-#             currentPCoeff = self.online_solution[i][1 + self.Nphi_u:1 + self.Nphi_u + self.Nphi_p, 0].reshape(-1, 1)
-#             currentNutCoeff = self.nut_coeffs_history[i].reshape(-1, 1)  
+#         sol = self.online_solution[i]
+#         nut = self.nut_coeffs_history[i]
 
-#             CoeffU.append(currentUCoeff)
-#             CoeffP.append(currentPCoeff)
-#             CoeffNut.append(currentNutCoeff)
-            
-#             # next_write += export_every_index
-#             time_now = self.online_solution[i][0, 0]
-#             tValues.append(time_now)
-            
-#             if export_fields and i == next_export:
-#                 uRec = volVectorField("uRec", self.Umodes[0])
-#                 pRec = volScalarField("pRec", self.Pmodes[0])
-#                 nutRec = volScalarField("nutRec", self.nut_modes[:, :, 0])
+#         if sol is None or nut is None:
+#             continue
 
-#                 uRecField = self.Umodes.reconstruct(uRec, [currentUCoeff], "uRec")
-#                 pRecField = self.Pmodes.reconstruct(pRec, [currentPCoeff], "pRec")
-#                 nutRecField = self.NutModes.reconstruct(nutRec, [currentNutCoeff], "nutRec")
+#         # Assicurati che Nphi_u e Nphi_p siano int (potrebbero essere list/array)
+#         Nphi_u = self.Nphi_u[0] if isinstance(self.Nphi_u, (list, np.ndarray)) else self.Nphi_u
+#         Nphi_p = self.Nphi_p[0] if isinstance(self.Nphi_p, (list, np.ndarray)) else self.Nphi_p
 
-#                 ITHACAstream.exportFields(uRecField, folder, "uRec")
-#                 ITHACAstream.exportFields(pRecField, folder, "pRec")
-#                 ITHACAstream.exportFields(nutRecField, folder, "nutRec")
+#         currentUCoeff = sol[1:1 + Nphi_u].reshape(-1, 1)
+#         currentPCoeff = sol[1 + Nphi_u:1 + Nphi_u + Nphi_p].reshape(-1, 1)
+#         currentNutCoeff = nut.reshape(-1, 1)
 
-#                 next_export += export_every_index
+#         CoeffU.append(currentUCoeff)
+#         CoeffP.append(currentPCoeff)
+#         CoeffNut.append(currentNutCoeff)
 
+#         time_now = sol[0] if sol[0].ndim == 0 else sol[0, 0]
+#         tValues.append(time_now)
 
-#         counter += 1
-    
-#     uRec = volVectorField("uRec", self.Umodes[0])
-#     pRec = volScalarField("pRec", self.Pmodes[0])
-#     nutRec = volScalarField("nutRec", self.nut_modes[:, :, 0]) 
-    
-#     self.uRecFields = self.Umodes.reconstruct(uRec, CoeffU, "uRec")
-#     self.pRecFields = self.Pmodes.reconstruct(pRec, CoeffP, "pRec")
-#     self.nutRecFields = self.NutModes.reconstruct(nutRec, CoeffNut, "nutRec")
+#     ##  LEGGERE I MODI POD  ##
+#     base_dir = "ITACHAoutput/POD"
 
-#     # if export_fields:
-#     #     ITHACAstream.exportFields(self.uRecFields, folder, "uRec")
-#     #     ITHACAstream.exportFields(self.pRecFields, folder, "pRec")
-#     #     ITHACAstream.exportFields(self.nutRecFields, folder, "nutRec")
+#     # Numero di modalità POD
+#     num_modes = 10
+#     mode_dirs = [os.path.join(base_dir, str(i+1)) for i in range(num_modes)]
 
-#     # Salva coefficienti e tempi .npy
-#     np.save(os.path.join(folder, "CoeffU.npy"), np.array(CoeffU))
-#     np.save(os.path.join(folder, "CoeffP.npy"), np.array(CoeffP))
-#     np.save(os.path.join(folder, "CoeffNut.npy"), np.array(CoeffNut))
-#     np.save(os.path.join(folder, "tValues.npy"), np.array(tValues))
+#     # Liste per raccogliere i modi per ciascuna variabile
+#     u_modes = []
+#     p_modes = []
+#     nut_modes = []
 
+#     for mode_path in mode_dirs:
+#         # Percorsi dei file
+#         u_file = os.path.join(mode_path, "U")
+#         p_file = os.path.join(mode_path, "p")
+#         nut_file = os.path.join(mode_path, "nut")
 
-def reconstruct(self, export_fields, folder):
-    if export_fields:
-        os.makedirs(folder, exist_ok=True)
-        ITHACAutilities.createSymLink(folder)
+#         # Verifica che i file esistano
+#         if not (os.path.exists(u_file) and os.path.exists(p_file) and os.path.exists(nut_file)):
+#             raise FileNotFoundError(f"File mancanti nella cartella: {mode_path}")
 
-    CoeffU = []
-    CoeffP = []
-    CoeffNut = []
-    tValues = []
+#         # Caricamento dei dati 
+#         u = np.loadtxt(u_file)
+#         p = np.loadtxt(p_file)
+#         nut = np.loadtxt(nut_file)
 
-    for i in range(len(self.online_solution)):
-        sol = self.online_solution[i]
-        nut = self.nut_coeffs_history[i]
+#         # Aggiunta alle liste
+#         u_modes.append(u)
+#         p_modes.append(p)
+#         nut_modes.append(nut)
 
-        if sol is None or nut is None:
-            continue
+#     # Costruzione delle matrici finali (ogni colonna è un modo POD)
+#     u_POD_matrix = np.column_stack(u_modes)
+#     p_POD_matrix = np.column_stack(p_modes)
+#     nut_POD_matrix = np.column_stack(nut_modes)
 
-        # Assicurati che Nphi_u e Nphi_p siano int (potrebbero essere list/array)
-        Nphi_u = self.Nphi_u[0] if isinstance(self.Nphi_u, (list, np.ndarray)) else self.Nphi_u
-        Nphi_p = self.Nphi_p[0] if isinstance(self.Nphi_p, (list, np.ndarray)) else self.Nphi_p
+#     # Output delle dimensioni per verifica
+#     print("Matrice U (velocità):", u_POD_matrix.shape)
+#     print("Matrice P (pressione):", p_POD_matrix.shape)
+#     print("Matrice NUT (viscosità):", nut_POD_matrix.shape)
+#     print("CoeffU:", CoeffU.shape)
+#     print("Coeffp:", Coeffp.shape)
+#     print("CoeffNut:", CoeffNut.shape)
 
-        currentUCoeff = sol[1:1 + Nphi_u].reshape(-1, 1)
-        currentPCoeff = sol[1 + Nphi_u:1 + Nphi_u + Nphi_p].reshape(-1, 1)
-        currentNutCoeff = nut.reshape(-1, 1)
-
-        CoeffU.append(currentUCoeff)
-        CoeffP.append(currentPCoeff)
-        CoeffNut.append(currentNutCoeff)
-
-        time_now = sol[0] if sol[0].ndim == 0 else sol[0, 0]
-        tValues.append(time_now)
-
-    # Reconstruct fields at all saved steps
-    uRec = volVectorField("uRec", self.Umodes[0])
-    pRec = volScalarField("pRec", self.Pmodes[0])
-    nutRec = volScalarField("nutRec", self.nut_modes[:, :, 0])
-
-    self.uRecFields = self.Umodes.reconstruct(uRec, CoeffU, "uRec")
-    self.pRecFields = self.Pmodes.reconstruct(pRec, CoeffP, "pRec")
-    self.nutRecFields = self.NutModes.reconstruct(nutRec, CoeffNut, "nutRec")
-
-    # Export all reconstructed fields, if required
-    if export_fields:
-        ITHACAstream.exportFields(self.uRecFields, folder, "uRec")
-        ITHACAstream.exportFields(self.pRecFields, folder, "pRec")
-        ITHACAstream.exportFields(self.nutRecFields, folder, "nutRec")
-
-    # Save coefficients and times
-    np.save(os.path.join(folder, "CoeffU.npy"), np.array(CoeffU))
-    np.save(os.path.join(folder, "CoeffP.npy"), np.array(CoeffP))
-    np.save(os.path.join(folder, "CoeffNut.npy"), np.array(CoeffNut))
-    np.save(os.path.join(folder, "tValues.npy"), np.array(tValues))
+#     u_field_LSTM = u_POD_matrix @ CoeffU
+#     p_field_LSTM = p_POD_matrix @ CoeffP
+#     nut_field_LSTM = nut_POD_matrix @ CoeffNut

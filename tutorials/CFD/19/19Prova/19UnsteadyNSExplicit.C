@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
     vel_now(0, 0) = 1;
     reduced.solveOnline(vel_now, 1);
     // Reconstruct the solution and export it
-    reduced.reconstruct(false, "./ITHACAoutput/Reconstruction/");
+    reduced.reconstruct(true, "./ITHACAoutput/Reconstruction/");
     
     Eigen::MatrixXd Errors;
     Errors = ITHACAutilities::errorL2Rel(example.Ufield, reduced.uRecFields);

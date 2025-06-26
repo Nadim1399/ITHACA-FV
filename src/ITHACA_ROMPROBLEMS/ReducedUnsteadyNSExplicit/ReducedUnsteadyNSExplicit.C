@@ -444,7 +444,13 @@ void ReducedUnsteadyNSExplicit::reconstruct(bool exportFields, fileName folder)
     uRecFields = problem->Umodes.reconstruct(uRec, CoeffU, "uRec");
     pRecFields = problem->Pmodes.reconstruct(pRec, CoeffP, "pRec");
 
-
+    // Eigen::MatrixXd urec_Eigen = Foam2Eigen::ptrList2Eigen(uRecFields);
+    // List<Eigen::MatrixXd> urec_Eigen_BC = Foam2Eigen::field2EigenBC(uRecFields);
+    // cnpy::save(urec_Eigen,"pippo.npy");
+    // for(int i; i<urec_Eigen_BC;i++)
+    // {
+    //     cnpy::save(urec_Eigen_BC[i],"pippo_"+name(i)+".npy");
+    // }
     
     if (exportFields)
     {
