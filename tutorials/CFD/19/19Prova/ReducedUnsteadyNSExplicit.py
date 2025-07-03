@@ -244,15 +244,6 @@ class ReducedUnsteadyNSExplicit:
         tmp_sol[1 + int(self.Nphi_u) : 1 + int(self.Nphi_u) + int(self.Nphi_p)] = b
         tmp_sol[1 + int(self.Nphi_u) + int(self.Nphi_p) : 1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u)] = c_o
         tmp_sol[-nut_dim:] = np.zeros(nut_dim)  
-        # self.online_solution[0] = tmp_sol
-
-        # nut_dim = len(nut_coeffs)
-        # tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
-        # tmp_sol[0] = time
-        # tmp_sol[1:int(self.Nphi_u)+1] = a_o                                                
-        # tmp_sol[int(self.Nphi_u)+1:int(self.Nphi_u)+1+int(self.Nphi_p)] = b                
-        # tmp_sol[-int(self.Nphi_u):] = c_o                                               
-        # self.online_solution[0] = tmp_sol 
 
         # Modello LSTM
         lstm_model = tf.keras.models.load_model('./Copia/trained_model.keras')
@@ -358,14 +349,6 @@ class ReducedUnsteadyNSExplicit:
             tmp_sol[-nut_dim:] = nut_coeffs.flatten()
             self.online_solution[out_iterator] = tmp_sol
 
-
-            # tmp_sol = np.zeros((int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + 1))
-            # tmp_sol[0] = time 
-            # tmp_sol[1 : 1 + int(self.Nphi_u)] = a_n.flatten()
-            # tmp_sol[1 + int(self.Nphi_u):1 + int(self.Nphi_u) + int(self.Nphi_p)] = b.flatten()
-            # tmp_sol[-int(self.Nphi_u):] = c_n.flatten()
-            # self.online_solution[out_iterator] = tmp_sol
-
             a_o = a_n.copy()
             c_o = c_n
             
@@ -452,87 +435,10 @@ class ReducedUnsteadyNSExplicit:
         p_field_LSTM = p_POD_matrix @ CoeffP_mat
         nut_field_LSTM = nut_POD_matrix @ CoeffNut_mat
 
+        print("u_field_LSTM", u_field_LSTM.shape)
+        print("p_field_LSTM", p_field_LSTM.shape)
+        print("nut_field_LSTM", nut_field_LSTM.shape)
+
         np.save(os.path.join(ROM_LSTM_Rec, "u_field_LSTM.npy"), u_field_LSTM)
         np.save(os.path.join(ROM_LSTM_Rec, "p_field_LSTM.npy"), p_field_LSTM)
         np.save(os.path.join(ROM_LSTM_Rec, "nut_field_LSTM.npy"), nut_field_LSTM)
-
-
-# def reconstruct(self,  folder):
-
-#     os.makedirs(folder, exist_ok=True)
-
-#     CoeffU = []
-#     CoeffP = []
-#     CoeffNut = []
-#     tValues = []
-
-#     for i in range(len(self.online_solution)):
-#         sol = self.online_solution[i]
-#         nut = self.nut_coeffs_history[i]
-
-#         if sol is None or nut is None:
-#             continue
-
-#         # Assicurati che Nphi_u e Nphi_p siano int (potrebbero essere list/array)
-#         Nphi_u = self.Nphi_u[0] if isinstance(self.Nphi_u, (list, np.ndarray)) else self.Nphi_u
-#         Nphi_p = self.Nphi_p[0] if isinstance(self.Nphi_p, (list, np.ndarray)) else self.Nphi_p
-
-#         currentUCoeff = sol[1:1 + Nphi_u].reshape(-1, 1)
-#         currentPCoeff = sol[1 + Nphi_u:1 + Nphi_u + Nphi_p].reshape(-1, 1)
-#         currentNutCoeff = nut.reshape(-1, 1)
-
-#         CoeffU.append(currentUCoeff)
-#         CoeffP.append(currentPCoeff)
-#         CoeffNut.append(currentNutCoeff)
-
-#         time_now = sol[0] if sol[0].ndim == 0 else sol[0, 0]
-#         tValues.append(time_now)
-
-#     ##  LEGGERE I MODI POD  ##
-#     base_dir = "ITACHAoutput/POD"
-
-#     # Numero di modalità POD
-#     num_modes = 10
-#     mode_dirs = [os.path.join(base_dir, str(i+1)) for i in range(num_modes)]
-
-#     # Liste per raccogliere i modi per ciascuna variabile
-#     u_modes = []
-#     p_modes = []
-#     nut_modes = []
-
-#     for mode_path in mode_dirs:
-#         # Percorsi dei file
-#         u_file = os.path.join(mode_path, "U")
-#         p_file = os.path.join(mode_path, "p")
-#         nut_file = os.path.join(mode_path, "nut")
-
-#         # Verifica che i file esistano
-#         if not (os.path.exists(u_file) and os.path.exists(p_file) and os.path.exists(nut_file)):
-#             raise FileNotFoundError(f"File mancanti nella cartella: {mode_path}")
-
-#         # Caricamento dei dati 
-#         u = np.loadtxt(u_file)
-#         p = np.loadtxt(p_file)
-#         nut = np.loadtxt(nut_file)
-
-#         # Aggiunta alle liste
-#         u_modes.append(u)
-#         p_modes.append(p)
-#         nut_modes.append(nut)
-
-#     # Costruzione delle matrici finali (ogni colonna è un modo POD)
-#     u_POD_matrix = np.column_stack(u_modes)
-#     p_POD_matrix = np.column_stack(p_modes)
-#     nut_POD_matrix = np.column_stack(nut_modes)
-
-#     # Output delle dimensioni per verifica
-#     print("Matrice U (velocità):", u_POD_matrix.shape)
-#     print("Matrice P (pressione):", p_POD_matrix.shape)
-#     print("Matrice NUT (viscosità):", nut_POD_matrix.shape)
-#     print("CoeffU:", CoeffU.shape)
-#     print("Coeffp:", Coeffp.shape)
-#     print("CoeffNut:", CoeffNut.shape)
-
-#     u_field_LSTM = u_POD_matrix @ CoeffU
-#     p_field_LSTM = p_POD_matrix @ CoeffP
-#     nut_field_LSTM = nut_POD_matrix @ CoeffNut
