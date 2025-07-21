@@ -265,14 +265,12 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
             // Pressure Poisson Equation
             // Diffusion Term
             Eigen::VectorXd M1 = problem->BP_matrix * a_o * nu ;
-            // cnpy::save(M1, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M1_con.npy");
 
             // Convection Term
             Eigen::MatrixXd cf(1, 1);
 
             // Divergence term
             Eigen::MatrixXd M2 = problem->P_matrix * a_o;
-            // cnpy::save(M2, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M2_con.npy");
 
             for (label l = 0; l < Nphi_p; l++)
             {
@@ -300,11 +298,9 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
 
             // Diffusion Term
             Eigen::VectorXd M5 = problem->B_matrix * a_o * nu ;
-            // cnpy::save(M5, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M5_con.npy");
 
             // Pressure Gradient Term
             Eigen::VectorXd M3 = problem->K_matrix * b;
-            // cnpy::save(M3, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M3_con.npy");
 
             // Boundary Term Diffusion + Convection
             Eigen::MatrixXd boundaryTerm = Eigen::MatrixXd::Zero(Nphi_u, N_BC);
@@ -333,15 +329,12 @@ void ReducedUnsteadyNSExplicit::solveOnline(Eigen::MatrixXd vel,
 
             // Mass Term
             Eigen::MatrixXd M6 = problem->I_matrix * a_o;
-            // cnpy::save(M6, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M6_con.npy");
 
             // Diffusion Term
             Eigen::MatrixXd M7 = problem->DF_matrix * a_o * nu;
-            // cnpy::save(M7, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M7_con.npy");
 
             // Pressure Gradient Term
             Eigen::MatrixXd M8 = problem->KF_matrix * b.col(0);
-            // cnpy::save(M8, "/home/nrooho/ITHACA-FV/src/ITHACA_ROMPROBLEMS/ReducedUnsteadyNSExplicit/file_python/M8_con.npy");
 
             // Convective Term
             Eigen::MatrixXd M9 = Eigen::VectorXd::Zero(Nphi_u);
@@ -444,14 +437,6 @@ void ReducedUnsteadyNSExplicit::reconstruct(bool exportFields, fileName folder)
     uRecFields = problem->Umodes.reconstruct(uRec, CoeffU, "uRec");
     pRecFields = problem->Pmodes.reconstruct(pRec, CoeffP, "pRec");
 
-    // Eigen::MatrixXd urec_Eigen = Foam2Eigen::ptrList2Eigen(uRecFields);
-    // List<Eigen::MatrixXd> urec_Eigen_BC = Foam2Eigen::field2EigenBC(uRecFields);
-    // cnpy::save(urec_Eigen,"pippo.npy");
-    // for(int i; i<urec_Eigen_BC;i++)
-    // {
-    //     cnpy::save(urec_Eigen_BC[i],"pippo_"+name(i)+".npy");
-    // }
-    
     if (exportFields)
     {
         ITHACAstream::exportFields(uRecFields, folder,
