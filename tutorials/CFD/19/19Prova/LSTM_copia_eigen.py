@@ -7,6 +7,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import os
+import joblib
 
 
 ###################    CREAZIONE MODELLO RETE NEURALE LSTM     ###################
@@ -85,6 +86,9 @@ Y_val_raw = val_coeff_nut.T                                # Validazione
 
 X_val = x_scaler.transform(X_val_raw)                         # Validazione
 Y_val = y_scaler.transform(Y_val_raw)                         # Validazione
+
+joblib.dump(x_scaler, "./Eigen/x_scaler.pkl")
+joblib.dump(y_scaler, "./Eigen/y_scaler.pkl")
 
 # ==== CREAZIONE SEQUENZE PER LSTM ====
 def create_sequences(X, Y, lookback, step=1):

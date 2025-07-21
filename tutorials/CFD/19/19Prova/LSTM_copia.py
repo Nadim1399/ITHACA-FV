@@ -72,8 +72,6 @@ def create_sequences(X, Y, lookback, step=1):
     return np.array(X_seq), np.array(Y_seq)
 
 X_train_seq, Y_train_seq = create_sequences(X_all, Y_all, lookback, step=1)
-# X_train_seq = np.clip(X_train_seq, -1e3, 1e3)
-# Y_train_seq = np.clip(Y_train_seq, -1e3, 1e3)
 
 X_val_seq, Y_val_seq = create_sequences(X_val, Y_val, lookback=lookback, step=1)
 
@@ -83,11 +81,6 @@ print("X_train_seq min/max:", np.min(X_train_seq), np.max(X_train_seq))
 print("Y_train_seq min/max:", np.min(Y_train_seq), np.max(Y_train_seq))
 
 # ==== DEFINIZIONE MODELLO LSTM ====
-# model = Sequential()
-# model.add(LSTM(64, return_sequences=False, input_shape=(lookback, X_train_seq.shape[2])))
-# model.add(Dense(32, activation='relu'))  # Hidden Dense
-# model.add(Dense(Y_train_seq.shape[1]))   # Output
-
 model = Sequential()
 model.add(LSTM(64, return_sequences=True, input_shape=(lookback, X_train_seq.shape[2])))  # 1° LSTM
 model.add(LSTM(32, return_sequences=False))                                               # 2° LSTM
@@ -98,22 +91,6 @@ opt = Adam(learning_rate=2e-5)
 
 model.compile(optimizer=opt, loss='mse')
 model.summary()
-
-# model = Sequential()
-# model.add(LSTM(
-#     units=48, 
-#     return_sequences=False, 
-#     input_shape=(lookback, X_train_seq.shape[2]),
-#     dropout=0.4, recurrent_dropout=0.4 
-# ))
-# model.add(Dense(32, activation='tanh', kernel_regularizer=regularizers.l2(1e-4)))
-# model.add(Dense(16, activation='tanh', kernel_regularizer=regularizers.l2(1e-4)))
-# model.add(Dense(Y_train_seq.shape[1], activation='softplus'))
-
-# opt = Adam(learning_rate=1e-5)
-
-# model.compile(optimizer=opt, loss=Huber(delta=1.0))
-# model.summary()
 
 
 ###################    TRAINING     ###################
@@ -134,8 +111,6 @@ model.save("./Copia/trained_model.keras")
 for i in range(Y_true_original.shape[1]): 
     epsilon = 1e-8
     rel_error_train = np.abs(Y_true_original[:, i] - Y_pred_original[:, i]) / (np.abs(Y_pred_original[:, i]) + epsilon)
-
-    # rel_error_train = np.abs(Y_true_original[:, i] - Y_pred_original[:, i])/np.abs(Y_pred_original[:, i])
 
     plt.figure(figsize=(10, 4))
     plt.plot(rel_error_train, label=f'|Errore training|')
@@ -167,14 +142,9 @@ for i in range(min(3, Y_true_original.shape[1])):
     plt.close()
 
 
-
 ###################    VALIDAZIONE     ###################
-
-# X_val_seq, Y_val_seq = create_sequences(X_val, Y_val, lookback=lookback, step=1)
-
 Y_val_pred = model.predict(X_val_seq)
 Y_val_pred_orig = y_scaler.inverse_transform(Y_val_pred)
-# Y_val_pred_orig = np.clip(Y_val_pred_orig, 0, np.percentile(Y_val_pred_orig, 99))
 Y_val_true_orig = y_scaler.inverse_transform(Y_val_seq)
 
 # === SALVA PREDICTION E VERITÀ ===

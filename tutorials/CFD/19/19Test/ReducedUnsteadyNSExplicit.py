@@ -11,9 +11,9 @@ class ReducedUnsteadyNSExplicit:
 
     def __init__(self, fluxMethod):
         self.fluxMethod = fluxMethod
-        self.N_BC = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/N_BC.npy")
-        self.Nphi_u = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/Nphi_u.npy")
-        self.Nphi_p = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/Nphi_p.npy")
+        self.N_BC = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/N_BC.npy")
+        self.Nphi_u = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/Nphi_u.npy")
+        self.Nphi_p = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/Nphi_p.npy")
        
     def solve_online(self, vel):
         if self.fluxMethod == "inconsistent":
@@ -171,47 +171,47 @@ class ReducedUnsteadyNSExplicit:
         dt = 0.005
         nu = 0.01
 
-        C_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/C_" + str((0)) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
+        C_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/C_" + str((0)) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
 
-        Cf_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/Cf_" + str(0) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
+        Cf_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/Cf_" + str(0) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
 
-        Ci_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/Ci_" + str(0) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
+        Ci_tensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/Ci_" + str(0) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_t.npy")        
 
-        RD_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/RD/RD" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        RD_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/RD/RD" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        RC_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/RC/RC" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        RC_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/RC/RC" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        SD_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/SD/SD" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        SD_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/SD/SD" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        SC_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/SC/SC" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        SC_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/SC/SC" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        W_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/W_" + str(NUmodes) + ".npy")
+        W_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/W_" + str(NUmodes) + ".npy")
 
-        BP_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/BP" +  "_" + str(NPmodes) + ".npy")
+        BP_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/BP" +  "_" + str(NPmodes) + ".npy")
 
-        P_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/P" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_" + str(NPmodes) + ".npy")
+        P_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/P" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_" + str(NPmodes) + ".npy")
 
-        B_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/B" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        B_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/B" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        K_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/K" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_" + str(NPmodes) + ".npy")
+        K_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/K" + "_" + str(i) + "_" + str(NUmodes) + "_" + str(NSUPmodes) + "_" + str(NPmodes) + ".npy")
 
-        I_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/I" + "_" + str(NUmodes) + ".npy")
+        I_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/I" + "_" + str(NUmodes) + ".npy")
 
-        KF_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/KF" + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        KF_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/KF" + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        DF_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/DF" + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
+        DF_matrix = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/DF" + "_" + str(NUmodes) + "_" + str(NSUPmodes) + ".npy")
 
-        cTotalTensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/Matrices/cTotalTensor.npy")
+        cTotalTensor = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/ITHACAoutput/Matrices/cTotalTensor.npy")
 
         # Create and resize the solution vectors
 
-        a_o = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/a_o_con" + ".npy")
+        a_o = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/a_o_con" + ".npy")
         a_n = np.zeros(a_o.size)
-        b = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/b_con" + ".npy")
-        c_o = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/c_o_con" + ".npy")
-        x = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/x_con" + ".npy")
-        presidual = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/presidual_con" + ".npy")
-        RHS = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/RHS_con" + ".npy")
+        b = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/b_con" + ".npy")
+        c_o = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/c_o_con" + ".npy")
+        x = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/x_con" + ".npy")
+        presidual = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/presidual_con" + ".npy")
+        RHS = np.load("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/RHS_con" + ".npy")
 
         counter = 0
         time = self.tstart
@@ -244,12 +244,12 @@ class ReducedUnsteadyNSExplicit:
         tmp_sol[-nut_dim:] = np.zeros(nut_dim)  
 
         # Modello LSTM
-        lstm_model = tf.keras.models.load_model('./Copia/trained_model.keras')
-        # lstm_model = tf.keras.models.load_model('./results/trained_model.keras')
-        # x_scaler = joblib.load("./results/x_scaler.pkl")
-        # y_scaler = joblib.load("./results/y_scaler.pkl")
-        x_scaler = joblib.load("./Copia/x_scaler.pkl")
-        y_scaler = joblib.load("./Copia/y_scaler.pkl")
+        # lstm_model = tf.keras.models.load_model('./Prova/trained_model.keras')
+        lstm_model = tf.keras.models.load_model('./results/trained_model.keras')
+        x_scaler = joblib.load("./results/x_scaler.pkl")
+        y_scaler = joblib.load("./results/y_scaler.pkl")
+        # x_scaler = joblib.load("./Copia/x_scaler.pkl")
+        # y_scaler = joblib.load("./Copia/y_scaler.pkl")
         
 
         for out_iterator in range(len(self.online_solution)):
@@ -274,13 +274,13 @@ class ReducedUnsteadyNSExplicit:
 
             for i in range(int(self.N_BC) + 1):
                 
-                filename_Div = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysDiv_{i}.npy"
+                filename_Div = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/LinSysDiv_{i}.npy"
                 LinSysDiv.append(np.load(filename_Div))
                 
-                filename_Conv = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysConv_{i}.npy"
+                filename_Conv = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/LinSysConv_{i}.npy"
                 LinSysConv.append(np.load(filename_Conv))
  
-                filename_Diff = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/file_python/LinSysDiff_{i}.npy"
+                filename_Diff = f"/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Test/file_python/LinSysDiff_{i}.npy"
                 LinSysDiff.append(np.load(filename_Diff))
 
             
@@ -293,14 +293,9 @@ class ReducedUnsteadyNSExplicit:
                 RedLinSysP[1] += vel * ((1 / dt) * LinSysDiv[i + 1] + nu * LinSysDiff[i + 1] +
                                    vel * LinSysConv[i + 1])
             
-            val = [0.000231507, -4.59464e-05, -0.000758627, 0.00161798, -0.0038542,
-                    -0.000848687, -0.00196677, -0.10943, -0.278774, -0.652738]
-            K = np.diag(val)
 
-            presidual = K*b + RedLinSysP[0] @ x - RedLinSysP[1]
-            tau = 2100
-            T = (tau*K + RedLinSysP[0])
-            b = np.linalg.solve(T, RedLinSysP[1])
+            presidual = RedLinSysP[0] @ x - RedLinSysP[1]
+            b = np.linalg.solve(RedLinSysP[0], RedLinSysP[1])
 
             # Momentum Equation
 
@@ -430,6 +425,10 @@ class ReducedUnsteadyNSExplicit:
         print("CoeffU:", CoeffU_mat.shape)
         print("Coeffp:", CoeffP_mat.shape)
         print("CoeffNut:", CoeffNut_mat.shape)
+
+        # print("CoeffU_mat:", CoeffU_mat)
+        # print("Coeffp_mat:", CoeffP_mat)
+        # print("CoeffNut_mat:", CoeffNut_mat)
 
         np.save("Coeffs_rom/CoeffU_mat.npy", CoeffU_mat)
         np.save("Coeffs_rom/CoeffP_mat.npy", CoeffP_mat)

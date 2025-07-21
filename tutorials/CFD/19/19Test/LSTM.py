@@ -15,9 +15,9 @@ import joblib
 os.makedirs("results/plots", exist_ok=True)
 
 # ==== PARAMETRI ====
-lookback = 10     # fino a 20
+lookback = 15     # fino a 20
 epochs = 1000
-batch_size = 64   # fino a 64
+batch_size = 32   # fino a 64
 
 # ==== CARICAMENTO DATI POD ====
 coeffs_u = np.load("./Coeffs/u_coeffs.npy")     # shape (T, r_u)
@@ -81,7 +81,7 @@ model.add(LSTM(32, return_sequences=False))                                     
 model.add(Dense(32, activation='relu'))                                                   # 3° Dense
 model.add(Dense(Y_train_seq.shape[1]))                                                    # Output layer
 
-opt = Adam(learning_rate=1e-5)
+opt = Adam(learning_rate=2e-5)
 
 model.compile(optimizer=opt, loss='mse')
 model.summary()
