@@ -182,17 +182,37 @@ void importAndExportFields(int argc, char *argv[])
         
         Foam::volScalarField nut_field_foam(nutIO, mesh);
         
+        ///////// LSTM /////////
+        // Eigen::MatrixXd temp_u;
+        // Eigen::MatrixXd u_field = cnpy::load(temp_u, "corrected.npy");
+        
+        // Eigen::MatrixXd temp_p;
+        // Eigen::MatrixXd p_field = cnpy::load(temp_p, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ROM_LSTM_Rec/p_field_LSTM.npy");
+        
+        // Eigen::MatrixXd temp_n;
+        // Eigen::MatrixXd nut_field = cnpy::load(temp_n, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ROM_LSTM_Rec/nut_field_LSTM.npy");
+        
+        ///////// MLP /////////
+        // Eigen::MatrixXd temp_u;
+        // Eigen::MatrixXd u_field = cnpy::load(temp_u, "corrected.npy");
+        
+        // Eigen::MatrixXd temp_p;
+        // Eigen::MatrixXd p_field = cnpy::load(temp_p, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19MLP/MLP_Rec/p_field_MLP.npy");
+        
+        // Eigen::MatrixXd temp_n;
+        // Eigen::MatrixXd nut_field = cnpy::load(temp_n, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19MLP/MLP_Rec/nut_field_MLP.npy");
+        
+        ///////// TRANSFORMER /////////
         Eigen::MatrixXd temp_u;
-        // Eigen::MatrixXd u_field = cnpy::load(temp_u, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ROM_LSTM_Rec/u_field_LSTM.npy");
-        // Eigen::MatrixXd u_field = cnpy::load(temp_u, "u_reshaped.npy");
         Eigen::MatrixXd u_field = cnpy::load(temp_u, "corrected.npy");
         
         Eigen::MatrixXd temp_p;
-        Eigen::MatrixXd p_field = cnpy::load(temp_p, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ROM_LSTM_Rec/p_field_LSTM.npy");
+        Eigen::MatrixXd p_field = cnpy::load(temp_p, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Transformer/Tr_Rec/p_field_Tr.npy");
         
         Eigen::MatrixXd temp_n;
-        Eigen::MatrixXd nut_field = cnpy::load(temp_n, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ROM_LSTM_Rec/nut_field_LSTM.npy");
+        Eigen::MatrixXd nut_field = cnpy::load(temp_n, "/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Transformer/Tr_Rec/nut_field_Tr.npy");
         
+
         std::cout << "u_field shape: " << u_field.rows() << " x " << u_field.cols() << std::endl;
         std::cout << "p_field shape: " << p_field.rows() << " x " << p_field.cols() << std::endl;
         std::cout << "nut_field shape: " << nut_field.rows() << " x " << nut_field.cols() << std::endl;
@@ -224,9 +244,9 @@ void importAndExportFields(int argc, char *argv[])
             snapshots_nut.append(nut_field_foam.clone());
         }
         
-        Foam::word uOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/LSTM/u");
-        Foam::word pOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/LSTM/p");
-        Foam::word nutOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Prova/ITHACAoutput/LSTM/nut");
+        Foam::word uOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Transformer/ITHACAoutput/Tr/u");
+        Foam::word pOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Transformer/ITHACAoutput/Tr/p");
+        Foam::word nutOutputFolder("/home/nrooho/ITHACA-FV/tutorials/CFD/19/19Transformer/ITHACAoutput/Tr/nut");
         
         Foam::word uFieldName("u");
         Foam::word pFieldName("p");
@@ -249,15 +269,15 @@ void importAndExportFields(int argc, char *argv[])
 
         Eigen::MatrixXd Errors_U;
         Errors_U = ITHACAutilities::errorL2Rel(Ufield, snapshots_u);
-        cnpy::save(Errors_U, "./error_U.npy");
+        cnpy::save(Errors_U, "./Tr/error_U.npy");
 
         Eigen::MatrixXd Errors_p;
         Errors_p = ITHACAutilities::errorL2Rel(pfield, snapshots_p);
-        cnpy::save(Errors_p, "./error_p.npy");
+        cnpy::save(Errors_p, "./Tr/error_p.npy");
 
         Eigen::MatrixXd Errors_nut;
         Errors_nut = ITHACAutilities::errorL2Rel(nutfield, snapshots_nut);
-        cnpy::save(Errors_nut, "./error_nut.npy");
+        cnpy::save(Errors_nut, "./Tr/error_nut.npy");
     }
     
     int main(int argc, char *argv[])
