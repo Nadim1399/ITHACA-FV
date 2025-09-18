@@ -147,11 +147,15 @@ int main(int argc, char* argv[])
     vel_now(0, 0) = 1;
     reduced.solveOnline(vel_now, 1);
     // Reconstruct the solution and export it
-    reduced.reconstruct(false, "./ITHACAoutput/Reconstruction/");
+    reduced.reconstruct(true, "./ITHACAoutput/Reconstruction/");
     
     Eigen::MatrixXd Errors;
     Errors = ITHACAutilities::errorL2Rel(example.Ufield, reduced.uRecFields);
     cnpy::save(Errors, "./error_"+name(NmodesUproj)+"_"+name(NmodesPproj)+".npy");
+
+    Eigen::MatrixXd Errors_p;
+    Errors_p = ITHACAutilities::errorL2Rel(example.Pfield, reduced.pRecFields);
+    cnpy::save(Errors_p, "./errors_p_"+name(NmodesUproj)+"_"+name(NmodesPproj)+".npy");
 
     // std::cerr<< "qui" << std::endl;
 
