@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "sans-serif",
+    "font.sans-serif": "Computer Modern",
+})
+
 # Carica coefficienti POD 
 fom_u = np.load("./Coeffs/u_coeffs.npy")[:, 1:] 
 rom_u = np.load("./Coeffs_rom/CoeffU_mat.npy")  
@@ -30,15 +36,18 @@ rel_error_energy = np.abs(energy_fom - energy_rom) / (np.abs(energy_fom) + 1e-8)
 # plt.savefig("Energy_t.png")
 
 # Plot errore relativo
-plt.plot(rel_error_energy, label="Errore relativo")
-plt.xlabel("Snapshot")
-plt.ylabel("Errore relativo energia")
-plt.title("Errore relativo tra energia FOM e ROM")
+plt.plot(rel_error_energy, marker='o', markevery=200, label="Relative energy error")
+plt.xlabel("Snapshot", fontsize=25)
+plt.ylabel("Relative error", fontsize=25)
+plt.title("Transformer relative energy error", fontsize=25)
+plt.tick_params(axis='both', labelsize=24)
+plt.tight_layout()
 plt.grid(True)
-plt.legend()
+plt.legend(fontsize=20)
 plt.show()
+# plt.savefig("./Energy/Error_Energy_Tr.png")
+plt.savefig("./Energy/Error_Energy_Tr.pdf")
 plt.savefig("./Energy/Error_Energy_Tr.png")
-
 # Statistiche
 print("Errore medio relativo sull'energia:", np.mean(rel_error_energy))
 # errore medio relativo sull'energia = 0.007828478168325

@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "sans-serif",
+    "font.sans-serif": "Computer Modern",
+})
+
 # Carica dati FOM e ROM
 fom_u = np.load("./Coeffs/u_coeffs.npy")[:, 1:]  
 fom_p = np.load("./Coeffs/p_coeffs.npy")[:, 1:]  
@@ -25,16 +31,18 @@ abs_error = np.abs(fom_psi - rom_psi)
 rel_error = abs_error / (np.abs(fom_psi) + 1e-8)
 
 # Plot errore relativo nel tempo
-plt.figure(figsize=(10, 4))
-plt.plot(rel_error, label='Errore relativo estrofia (ROM vs FOM)')
-plt.xlabel("Snapshot")
-plt.ylabel("Errore relativo")
+# plt.figure(figsize=(10, 4))
+plt.plot(rel_error, marker='o', markevery=200, label='Relative exstrophy error')
+plt.xlabel("Snapshot", fontsize=25)
+plt.ylabel("Relative error", fontsize=25)
 plt.grid(True)
-plt.legend()
-plt.title("Errore relativo tra FOM e ROM (estrofia proxy)")
+plt.tick_params(axis='both', labelsize=24)
+plt.legend(fontsize=20)
+plt.title("LSTM exstrophy error", fontsize=25)
 plt.tight_layout()
 plt.show()
 plt.savefig("./Exergy/Exergy_LSTM.png")
+plt.savefig("./Exergy/Exergy_LSTM.pdf")
 
 # # Histogramma degli errori
 # plt.hist(rel_error, bins=40, alpha=0.7, label='Relative Error')

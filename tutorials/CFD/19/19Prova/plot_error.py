@@ -8,12 +8,15 @@ error = np.load('error_10_10.npy')
 x = np.linspace(1, 10, len(error))
 
 # Crea il grafico
-plt.plot(x, error, label="Error")
+plt.plot(x, error, marker='o', markevery=200, label="Error")
 
 # Aggiungi etichette e titolo
-plt.xlabel("Time Step")
-plt.ylabel("Error values")
-plt.title("Error between U_FOM and U_ROM")
+plt.xlabel("Time Step", fontsize=25)
+plt.ylabel("Error values", fontsize=25)
+plt.title("Error between U_FOM and U_ROM", fontsize=25)
+plt.tick_params(axis='both', labelsize=24)
+plt.tight_layout()
+
 
 # Griglia sullo sfondo
 # plt.grid()
@@ -30,7 +33,7 @@ plt.gca().yaxis.set_minor_locator(plt.MultipleLocator(0.5))  # Modifica la dista
 
 
 # Aggiungi la legenda
-plt.legend()
+plt.legend(fontsize=20)
 
 # Mostra il grafico
 plt.show()
