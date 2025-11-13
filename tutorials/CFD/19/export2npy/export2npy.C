@@ -76,9 +76,12 @@ int main(int argc, char *argv[])
         );
 
     ITHACAparameters::getInstance(mesh, runTime);
-    ITHACAstream::read_fields(Ufield, U, "./ITHACAoutput/Offline/");
-    ITHACAstream::read_fields(pfield, p, "./ITHACAoutput/Offline/");
-    ITHACAstream::read_fields(nutfield, nut, "./ITHACAoutput/Offline/");
+    // ITHACAstream::read_fields(Ufield, U, "./ITHACAoutput/Offline/");
+    // ITHACAstream::read_fields(pfield, p, "./ITHACAoutput/Offline/");
+    // ITHACAstream::read_fields(nutfield, nut, "./ITHACAoutput/Offline/");
+    ITHACAstream::read_fields(Ufield, U, "./ITHACAoutput/POD/");
+    ITHACAstream::read_fields(pfield, p, "./ITHACAoutput/POD/");
+    ITHACAstream::read_fields(nutfield, nut, "./ITHACAoutput/POD/");
         
         Foam::IOobject uIO
         (
@@ -131,12 +134,12 @@ int main(int argc, char *argv[])
     Eigen::MatrixXd Nut_eig = Foam2Eigen::PtrList2Eigen(
         nutfield);
 
-    Info << "U.npy size: " << U_eig.rows() << " x " << U_eig.cols() << endl;
-    Info << "P.npy size: " << P_eig.rows() << " x " << P_eig.cols() << endl;
-    Info << "Nut.npy size: " << Nut_eig.rows() << " x " << Nut_eig.cols() << endl;
+    Info << "U_FOM_POD.npy size: " << U_eig.rows() << " x " << U_eig.cols() << endl;
+    Info << "P_FOM_POD.npy size: " << P_eig.rows() << " x " << P_eig.cols() << endl;
+    Info << "Nut_FOM_POD.npy size: " << Nut_eig.rows() << " x " << Nut_eig.cols() << endl;
 
-    cnpy::save(U_eig, "U.npy");
-    cnpy::save(P_eig, "P.npy");
-    cnpy::save(Nut_eig, "Nut.npy");
+    cnpy::save(U_eig, "FOM_POD/U_FOM_POD.npy");
+    cnpy::save(P_eig, "FOM_POD/P_FOM_POD.npy");
+    cnpy::save(Nut_eig, "FOM_POD/Nut_FOM_POD.npy");
     return 0;
 }                    
