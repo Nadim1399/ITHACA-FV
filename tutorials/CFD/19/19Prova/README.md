@@ -1,6 +1,148 @@
 # Introduction to tutorial 19
 
-In this tutorial we contruct a reduced order model for the classical lid driven cavity benchmark, which is a closed flow problem. The length of the two-dimensional square cavity is L = 1.0 m. A (64 × 64) structured mesh with quadrilateral cells is constructed on the domain. A tangential uniform velocity Ulid = 1.0 m/s is prescribed at the top wall and non-slip conditions are applied to the other walls.
+This test case presents a new methodology that enables more efficient simulation of turbulent flows by combining ROM techniques with data-driven methods. The focus of the study is the classical 3D lid-driven cavity problem: a cubic domain with a side length of 1.0 m, discretized with a 50×50×50 mesh. A uniform tangential velocity 𝑈lid = 1.0 m/s is applied at the top boundary, while no-slip conditions are imposed on all other walls. Below, we can see the geometry, the mesh, and the final simulation results obtained using the aforementioned hybrid methodology.
+
+IMMAGINE
+
+The initial condition for the cell-centered velocity is a zero field. A full order simulation is performed for a constant time step of 0.005 s and for a total simulation time of 10.0 s in the offline stage.
+
+## A detailed look into the code
+
+In this section we explain the main steps necessary to construct the tutorial N°19
+
+### How to perform the simulation
+
+To proceed with the simulation of this test case, it is first necessary to run the offline stage (i.e., the FOM simulation). The main script is located in 19Prova and is named 19UnsteadyNSExplicit.C. This file defines the fields used in the study, sets up the simulation, and saves the resulting data.
+
+```
+
+    public:
+        explicit tutorial19(int argc, char* argv[])
+            :
+            UnsteadyNSExplicit(argc, argv),
+            U(_U()),
+            p(_p()),
+            phi(_phi())
+        {}
+
+        // Fields To Perform
+        volVectorField& U;
+        volScalarField& p;
+        surfaceScalarField& phi;
+```
+
+Next, still within the 19Prova directory, the script LSTM_copia.py is used to train the LSTM neural network, after setting the various hyperparameters. The trained model is then saved so that it can be used in the script required to generate the ROM model (as explained below).
+
+```
+    # ==== SEQUENCES FOR LSTM ====
+    def create_sequences(X, Y, lookback, step=1):
+        X_seq, Y_seq = [], []
+        for i in range(0, len(X) - lookback, step):
+            X_seq.append(X[i:i+lookback])
+            Y_seq.append(Y[i+lookback])
+        return np.array(X_seq), np.array(Y_seq)
+
+    X_train_seq, Y_train_seq = create_sequences(X_all, Y_all, lookback, step=1)
+
+    X_val_seq, Y_val_seq = create_sequences(X_val, Y_val, lookback=lookback, step=1)
+
+    print("X_seq shape:", X_train_seq.shape)
+    print("Y_seq shape:", Y_train_seq.shape)
+    print("X_train_seq min/max:", np.min(X_train_seq), np.max(X_train_seq))
+    print("Y_train_seq min/max:", np.min(Y_train_seq), np.max(Y_train_seq))
+
+    # ==== DEFINITION OF THE LSTM MODEL ====
+    model = Sequential()
+    model.add(LSTM(64, return_sequences=True, input_shape=(lookback, X_train_seq.shape[2])))  # 1° LSTM
+    model.add(LSTM(32, return_sequences=False))                                               # 2° LSTM
+    model.add(Dense(32, activation='relu'))                                                   # 3° Dense
+    model.add(Dense(Y_train_seq.shape[1]))                                                    # Output layer
+
+    opt = Adam(learning_rate=2e-5)
+
+    model.compile(optimizer=opt, loss='mse')
+    model.summary()
+
+
+    ###################    TRAINING     ###################
+
+
+    history = model.fit(X_train_seq, Y_train_seq, epochs=epochs, batch_size=batch_size, validation_data=(X_val_seq, Y_val_seq))
+
+    # ==== PREDIZIONE DOPO IL TRAINING ====
+    Y_pred = model.predict(X_train_seq)
+    Y_pred_original = y_scaler.inverse_transform(Y_pred)
+    Y_true_original = y_scaler.inverse_transform(Y_train_seq)
+
+    # ==== SAVING ====
+    model.save("./Copia/trained_model.keras")
+
+```
+At this stage, the main script for the online phase (i.e., the ROM simulation) is used: ReducedUnsteadyNSExplicit.py. This script contains the entire procedure required to simulate the test case using the hybrid methodology. Specifically, the velocity and pressure fields are computed using ROM techniques, while the turbulent viscosity field is predicted using the trained LSTM model, which is loaded within the script. This process is performed at every iteration throughout the simulation, for a total of 2000 time steps.
+
+Thisi is hoe the iterations start
+
+```
+    for out_iterator in range(len(self.online_solution)):
+        time += dt
+        print(f"################## time = {time} ##################")
+
+```
+and this is how the online solution is setted:
+
+```
+    nut_dim = len(nut_coeffs)
+    tmp_sol = np.zeros((1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u) + nut_dim))
+    tmp_sol[0] = time
+    tmp_sol[1 : 1 + int(self.Nphi_u)] = a_n.flatten()
+    tmp_sol[1 + int(self.Nphi_u) : 1 + int(self.Nphi_u) + int(self.Nphi_p)] = b.flatten()
+    tmp_sol[1 + int(self.Nphi_u) + int(self.Nphi_p) : 1 + int(self.Nphi_u) + int(self.Nphi_p) + int(self.Nphi_u)] = c_n.flatten()
+    tmp_sol[-nut_dim:] = nut_coeffs.flatten()
+    self.online_solution[out_iterator] = tmp_sol
+
+    a_o = a_n.copy()
+    c_o = c_n
+    
+    # === Calcolo nut con modello LSTM ===
+    input_concat = np.concatenate((a_n.flatten(), b.flatten()), axis=0).reshape(1, -1)  
+    input_scaled = x_scaler.transform(input_concat)  
+    lstm_input = input_scaled[np.newaxis, :, :] 
+    nut_coeffs = lstm_model.predict(lstm_input, verbose=0)[0]
+    nut_coeffs = y_scaler.inverse_transform(nut_coeffs.reshape(1, -1))[0]  
+    if not hasattr(self, "nut_coeffs_history"):
+            self.nut_coeffs_history = []
+    self.nut_coeffs_history.append(nut_coeffs)
+
+```
+
+Finally, the fields are reconstructed (within the same script) and saved.
+
+To run all this script and obtain the final solution, it is necessary to run the MainReduced.py script.
+
+The same procedure is carried out using two additional neural network architectures: an MLP and a Transformer. To run these simulations, the corresponding steps must be followed in their respective directories (19MLP and 19Transformer).
+
+Finally, the 19Field folder is used to convert the FOM fields into .npy format, allowing the errors between the FOM and ROM solutions to be plotted.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- In this tutorial we contruct a reduced order model for the classical lid driven cavity benchmark, which is a closed flow problem. The length of the two-dimensional square cavity is L = 1.0 m. A (64 × 64) structured mesh with quadrilateral cells is constructed on the domain. A tangential uniform velocity Ulid = 1.0 m/s is prescribed at the top wall and non-slip conditions are applied to the other walls.
 
 The following image depicts a sketch of the geometry of the two-dimensional lid driven cavity problem.
 
@@ -180,4 +322,4 @@ Hence we solve the reduced order model:
 Finally the ROM solution is reconstructed. In the case the solution should be exported and exported, put true instead of false in the function:
 ```
     reduced.reconstruct(false, "./ITHACAoutput/Reconstruction/");
-```
+``` -->
